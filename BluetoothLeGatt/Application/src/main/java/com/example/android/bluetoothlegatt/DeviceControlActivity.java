@@ -177,7 +177,7 @@ public class DeviceControlActivity extends Activity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        switch(item.getItemId()) {
+        switch (item.getItemId()) {
             case R.id.menu_connect:
                 mBluetoothLeService.connect(mDeviceAddress);
                 return true;
@@ -249,16 +249,15 @@ public class DeviceControlActivity extends Activity {
                 this,
                 gattServiceData,
                 android.R.layout.simple_expandable_list_item_2,
-                new String[] {LIST_NAME, LIST_UUID},
-                new int[] { android.R.id.text1, android.R.id.text2 },
+                new String[]{LIST_NAME, LIST_UUID},
+                new int[]{android.R.id.text1, android.R.id.text2},
                 gattCharacteristicData,
                 android.R.layout.simple_expandable_list_item_2,
-                new String[] {LIST_NAME, LIST_UUID},
-                new int[] { android.R.id.text1, android.R.id.text2 }
+                new String[]{LIST_NAME, LIST_UUID},
+                new int[]{android.R.id.text1, android.R.id.text2}
         );
         mGattServicesList.setAdapter(gattServiceAdapter);
     }
-
 
 
     private static IntentFilter makeGattUpdateIntentFilter() {
@@ -269,24 +268,40 @@ public class DeviceControlActivity extends Activity {
         intentFilter.addAction(BluetoothLeService.ACTION_DATA_AVAILABLE);
         return intentFilter;
     }
-   int count2=10;
+
+    int count2 = 10;
+
     public void rotate(View view) {
-        if(mBluetoothLeService!=null){
-            mBluetoothLeService.sendRotateAngle(60+count2);
+        if (mBluetoothLeService != null) {
+            mBluetoothLeService.sendRotateAngle(60 + count2);
         }
-        count2+=10;
+        count2 += 10;
     }
-    int count=0;
+
+    int count = 0;
+
     public void turnOnOff(View view) {
-        if(count%2==0){
-            if(mBluetoothLeService!=null){
+        if (count % 2 == 0) {
+            if (mBluetoothLeService != null) {
                 mBluetoothLeService.changeMachineEnableStatus(true);
             }
-        }else{
-            if(mBluetoothLeService!=null){
+        } else {
+            if (mBluetoothLeService != null) {
                 mBluetoothLeService.changeMachineEnableStatus(false);
             }
         }
         count++;
+    }
+
+    public void readAngle(View view) {
+        if (mBluetoothLeService != null) {
+            mBluetoothLeService.getCurrentAngle();
+        }
+    }
+
+    public void readBattery(View view) {
+        if (mBluetoothLeService != null) {
+            mBluetoothLeService.getCurrentVoltage();
+        }
     }
 }

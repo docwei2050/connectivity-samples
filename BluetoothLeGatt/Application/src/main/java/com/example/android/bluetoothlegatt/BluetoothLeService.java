@@ -30,16 +30,16 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Binder;
 import android.os.IBinder;
-import android.os.Looper;
 import android.util.Log;
-import android.widget.Toast;
 
 import java.util.List;
 import java.util.UUID;
 
+import static com.example.android.bluetoothlegatt.GattAttributes.ORIGAMI_CURRENT_ANGLE;
+import static com.example.android.bluetoothlegatt.GattAttributes.ORIGAMI_CURRENT_VOLTAGE;
 import static com.example.android.bluetoothlegatt.GattAttributes.ORIGAMI_ENABLE_MACHINE;
-import static com.example.android.bluetoothlegatt.GattAttributes.ORIGAMI_ROTATE;
-import static com.example.android.bluetoothlegatt.GattAttributes.ORIGAMI_SERVICE;
+import static com.example.android.bluetoothlegatt.GattAttributes.ORIGAMI_ROTATE_UUID;
+import static com.example.android.bluetoothlegatt.GattAttributes.ORIGAMI_SERVICE_UUID;
 
 /**
  * Service for managing connection and data communication with a GATT server hosted on a
@@ -69,7 +69,7 @@ public class BluetoothLeService extends Service {
     public final static String EXTRA_DATA =
             "com.example.bluetooth.le.EXTRA_DATA";
 
-    public final static UUID UUID_ORIMI = UUID.fromString(GattAttributes.ORIGAMI_SERVICE);
+    public final static UUID UUID_ORIMI = UUID.fromString(GattAttributes.ORIGAMI_SERVICE_UUID);
 
     // Implements callback methods for GATT events that the app cares about.  For example,
     // connection change and services discovered.
@@ -107,7 +107,7 @@ public class BluetoothLeService extends Service {
 
         @Override
         public void onCharacteristicRead(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
-            Log.e(TAG, "onCharacteristicRead");
+            Log.e(TAG,"onCharacteristicRead");
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 //读取特征值
                 broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic);
@@ -116,7 +116,7 @@ public class BluetoothLeService extends Service {
 
         @Override
         public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
-            Log.e(TAG, "onCharacteristicChanged");
+            Log.e(TAG,"onCharacteristicChanged");
             //特征值改变
             broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic);
         }
@@ -124,18 +124,13 @@ public class BluetoothLeService extends Service {
         @Override
         public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
             super.onCharacteristicWrite(gatt, characteristic, status);
-            if (status == BluetoothGatt.GATT_SUCCESS) {
-                Looper.prepare();
-                Toast.makeText(BluetoothLeService.this, "写入成功__" + characteristic.getValue().toString(), Toast.LENGTH_SHORT).show();
-                Looper.loop();
-            } else {
-                Looper.prepare();
-                Toast.makeText(BluetoothLeService.this, "写入失败", Toast.LENGTH_SHORT).show();
-                Looper.loop();
+            if(status== BluetoothGatt.GATT_SUCCESS){
+                Log.e(TAG,"写入成功--"+characteristic.getValue().toString());
+            }else{
+                Log.e(TAG,"写入失败");
             }
         }
     };
-    private BluetoothGattCharacteristic mRotateCharacteristic;
 
     private void broadcastUpdate(final String action) {
         final Intent intent = new Intent(action);
@@ -144,37 +139,17 @@ public class BluetoothLeService extends Service {
 
     private void broadcastUpdate(final String action, final BluetoothGattCharacteristic characteristic) {
         final Intent intent = new Intent(action);
-
-        // This is special handling for the Heart Rate Measurement profile.  Data parsing is
-        // carried out as per profile specifications:
-        // http://developer.bluetooth.org/gatt/characteristics/Pages/CharacteristicViewer.aspx?u=org.bluetooth.characteristic.heart_rate_measurement.xml
-        if (UUID_ORIMI.equals(characteristic.getUuid())) {
-            //先判断特征值的属性
-            int flag = characteristic.getProperties();
-            int format = -1;
-            if ((flag & 0x01) != 0) {
-                format = BluetoothGattCharacteristic.FORMAT_UINT16;
-                Log.d(TAG, "Heart rate format UINT16.");
-            } else {
-                format = BluetoothGattCharacteristic.FORMAT_UINT8;
-                Log.d(TAG, "Heart rate format UINT8.");
+        //16进制
+        // For all other profiles, writes the data formatted in HEX.
+        final byte[] data = characteristic.getValue();
+        if (data != null && data.length > 0) {
+            final StringBuilder stringBuilder = new StringBuilder(data.length);
+            for (byte byteChar : data) {
+                //16进制
+                stringBuilder.append(String.format("%02X", byteChar));
             }
-            final int heartRate = characteristic.getIntValue(format, 1);
-            Log.d(TAG, String.format("Received heart rate: %d", heartRate));
-            intent.putExtra(EXTRA_DATA, String.valueOf(heartRate));
-        } else {
-            //16进制
-            // For all other profiles, writes the data formatted in HEX.
-            final byte[] data = characteristic.getValue();
-            if (data != null && data.length > 0) {
-                final StringBuilder stringBuilder = new StringBuilder(data.length);
-                for (byte byteChar : data) {
-                    //16进制
-                    stringBuilder.append(String.format("%02X ", byteChar));
-                }
 
-                intent.putExtra(EXTRA_DATA, new String(data) + "\n" + stringBuilder.toString());
-            }
+            intent.putExtra(EXTRA_DATA, new String(data) + "\n" + stringBuilder.toString());
         }
         sendBroadcast(intent);
     }
@@ -326,7 +301,7 @@ public class BluetoothLeService extends Service {
 
         // This is specific to Heart Rate Measurement.
         if (UUID_ORIMI.equals(characteristic.getUuid())) {
-            BluetoothGattDescriptor descriptor = characteristic.getDescriptor(UUID.fromString(ORIGAMI_ROTATE));
+            BluetoothGattDescriptor descriptor = characteristic.getDescriptor(UUID.fromString(ORIGAMI_ROTATE_UUID));
             descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
             mBluetoothGatt.writeDescriptor(descriptor);
         }
@@ -338,18 +313,17 @@ public class BluetoothLeService extends Service {
             Log.w(TAG, "BluetoothAdapter not initialized");
             return;
         }
-        if (mRotateCharacteristic == null) {
-            mRotateCharacteristic = mBluetoothGatt.getService(UUID.fromString(ORIGAMI_SERVICE))
-                    .getCharacteristic(UUID.fromString(ORIGAMI_ROTATE));
+        BluetoothGattCharacteristic bluetoothGattCharacteristic = mBluetoothGatt.getService(UUID.fromString(ORIGAMI_SERVICE_UUID))
+                .getCharacteristic(UUID.fromString(ORIGAMI_ROTATE_UUID));
+        if (bluetoothGattCharacteristic != null) {
+            mBluetoothGatt.setCharacteristicNotification(bluetoothGattCharacteristic, true);
+            byte[] bytes = new byte[1];
+            bytes[0] = (byte) value;
+            bluetoothGattCharacteristic.setValue(bytes);
+            bluetoothGattCharacteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
+            boolean b = mBluetoothGatt.writeCharacteristic(bluetoothGattCharacteristic);
+            Log.d(TAG, "startSend: " + b);
         }
-        //在写之前会注册通知
-        mBluetoothGatt.setCharacteristicNotification(mRotateCharacteristic, true);
-        byte[] bytes = new byte[1];
-        bytes[0] = (byte) value;
-        mRotateCharacteristic.setValue(bytes);
-        //mRotateCharacteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
-        boolean b = mBluetoothGatt.writeCharacteristic(mRotateCharacteristic);
-        Log.d(TAG, "startSend: " + b);
 
     }
 
@@ -358,16 +332,15 @@ public class BluetoothLeService extends Service {
             Log.w(TAG, "BluetoothAdapter not initialized");
             return;
         }
-
-        BluetoothGattCharacteristic bluetoothGattCharacteristic = mBluetoothGatt.getService(UUID.fromString(ORIGAMI_SERVICE))
+        BluetoothGattCharacteristic bluetoothGattCharacteristic = mBluetoothGatt.getService(UUID.fromString(ORIGAMI_SERVICE_UUID))
                 .getCharacteristic(UUID.fromString(ORIGAMI_ENABLE_MACHINE));
         //在写之前会注册通知
         if (bluetoothGattCharacteristic != null) {
             mBluetoothGatt.setCharacteristicNotification(bluetoothGattCharacteristic, true);
             byte[] bytes = new byte[1];
-            if (turnOn) {
+            if(turnOn){
                 bytes[0] = 1;
-            } else {
+            }else{
                 bytes[0] = 0;
             }
             bluetoothGattCharacteristic.setValue(bytes);
@@ -377,6 +350,20 @@ public class BluetoothLeService extends Service {
         }
 
     }
+
+    public void getCurrentAngle(){
+        BluetoothGattCharacteristic bluetoothGattCharacteristic = mBluetoothGatt.getService(UUID.fromString(ORIGAMI_SERVICE_UUID))
+                .getCharacteristic(UUID.fromString(ORIGAMI_CURRENT_ANGLE));
+        boolean b =mBluetoothGatt.readCharacteristic(bluetoothGattCharacteristic);
+        Log.d(TAG, "startSend: " + b);
+    }
+    public void getCurrentVoltage(){
+        BluetoothGattCharacteristic bluetoothGattCharacteristic = mBluetoothGatt.getService(UUID.fromString(ORIGAMI_SERVICE_UUID))
+                .getCharacteristic(UUID.fromString(ORIGAMI_CURRENT_VOLTAGE));
+        boolean b =mBluetoothGatt.readCharacteristic(bluetoothGattCharacteristic);
+        Log.d(TAG, "startSend: " + b);
+    }
+
 
     /**
      * Retrieves a list of supported GATT services on the connected device. This should be

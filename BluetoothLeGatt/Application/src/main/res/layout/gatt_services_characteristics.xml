@@ -25,6 +25,16 @@
         android:layout_height="58dp"/>
     <Button
         android:layout_width="match_parent"
+        android:text="读取角度"
+        android:onClick="readAngle"
+        android:layout_height="58dp"/>
+    <Button
+        android:layout_width="match_parent"
+        android:text="读取电压"
+        android:onClick="readBattery"
+        android:layout_height="58dp"/>
+    <Button
+        android:layout_width="match_parent"
         android:text="旋转50"
         android:onClick="rotate"
         android:layout_height="58dp"/>

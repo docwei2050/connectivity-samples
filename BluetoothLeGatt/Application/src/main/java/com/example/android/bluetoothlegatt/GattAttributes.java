@@ -23,11 +23,11 @@ import java.util.HashMap;
  */
 public class GattAttributes {
 
-    public static String ORIGAMI_SERVICE = "00003434-70c0-11e9-adc0-fa7ae01bbebc";
+    public static String ORIGAMI_SERVICE_UUID = "00003434-70c0-11e9-adc0-fa7ae01bbebc";
 
 
     //旋转角度可读可写
-    public static String ORIGAMI_ROTATE = "00003435-70c0-11e9-adc0-fa7ae01bbebc";
+    public static String ORIGAMI_ROTATE_UUID = "00003435-70c0-11e9-adc0-fa7ae01bbebc";
     //启动电机 可读可写
     public static String ORIGAMI_ENABLE_MACHINE = "00003438-70c0-11e9-adc0-fa7ae01bbebc";
     //当前角度
