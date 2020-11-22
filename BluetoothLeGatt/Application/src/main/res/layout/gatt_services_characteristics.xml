@@ -18,6 +18,16 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_margin="10dp">
+    <Button
+        android:layout_width="match_parent"
+        android:text="打开/关闭电机"
+        android:onClick="turnOnOff"
+        android:layout_height="58dp"/>
+    <Button
+        android:layout_width="match_parent"
+        android:text="旋转50"
+        android:onClick="rotate"
+        android:layout_height="58dp"/>
     <LinearLayout android:orientation="horizontal"
                   android:layout_width="match_parent"
                   android:layout_height="wrap_content"
@@ -64,6 +74,7 @@
                   android:layout_height="wrap_content"
                   android:text="@string/no_data"
                   android:textSize="18sp"/>
+
     </LinearLayout>
     <ExpandableListView android:id="@+id/gatt_services_list"
             android:layout_width="match_parent"
